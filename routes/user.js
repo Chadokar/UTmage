@@ -1,24 +1,22 @@
 const express = require("express");
-const register = require("../controllers/register");
 const { body, header } = require("express-validator");
 const { validate } = require("../services/validator");
+const { login } = require("../controllers/auth");
 
 const Router = express.Router();
 // auth
 Router.post(
-  "/register",
+  "/login",
   [
-    body("first_name", "Name field is required").isString(),
-    body("last_name", "Name field is required").isString(),
+    body("email", "Email required").exists().isEmail(),
     body("password", "Password length should be atleast 8 characters").isLength(
       {
         min: 8,
       }
     ),
-    header("Authorization", "Token is required").exists(),
   ],
   validate,
-  register
+  login
 );
 
 module.exports = Router;

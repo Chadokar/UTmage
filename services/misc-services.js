@@ -24,7 +24,8 @@ const generateHash = async (text, salts) => {
 };
 
 const compareHash = async (text, hash) => {
-  return await bcrypt.compare(text, hash);
+  let s;
+  return await bcrypt.compare(String(text), hash);
 };
 
 module.exports = {

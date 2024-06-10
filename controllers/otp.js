@@ -3,15 +3,24 @@ const {
   generateJWT,
   handlebarsReplacements,
   parseToken,
+  compareHash,
 } = require("../services/misc-services");
 const { templateToHTML, sendMail } = require("../services/mail-services");
 const bcrypt = require("bcryptjs");
+const db = require("../db");
 
 const otp_generate = async (req, res) => {
   try {
     // get email
-    const { email } = req.body;
-    const payload = { email };
+    const { email, first_name, last_name, password } = req.body;
+    const payload = { email, first_name, last_name, password };
+
+    // check if user exists
+    const user = await db("users").where({ email }).first();
+    if (user) {
+      res.status(400);
+      throw new Error("Email already exists");
+    }
 
     //generating OTP
     let otp = Math.floor(100000 + Math.random() * 900000);
@@ -27,7 +36,7 @@ const otp_generate = async (req, res) => {
     const content = handlebarsReplacements({ source, replacements });
 
     // generating token ref
-    const token = generateJWT(payload, { expiresIn: "1m" });
+    const token = generateJWT(payload, { expiresIn: "3m" });
 
     // sending mail
     await sendMail({
@@ -35,36 +44,62 @@ const otp_generate = async (req, res) => {
       subject: "OTP verification | " + process.env.COMPANY,
       html: content,
     })
-      .then(() => res.status(200).send({ message: "OTP is sent", token }))
+      .then(() =>
+        res.status(200).send({ message: "OTP is sent", token, success: true })
+      )
       .catch((err) => {
-        return res.status(424).send({ message: "OTP is not sent" });
+        return res
+          .status(424)
+          .send({ message: err.message || "OTP is not sent", success: false });
       });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal server error" });
+    if (res.statusCode < 400) res.status(500);
+    res.send({
+      error: error.message || "Internal server error",
+      success: false,
+    });
   }
 };
 
-const otp_verify = async (req, res) => {
+const otp_verify = async (req, res, next) => {
   try {
     // get otp
     const otp = parseInt(req.body.otp);
 
     // parse token
-    const { email, hashedOtp } = parseToken(req);
+    const { email, hashedOtp, first_name, last_name, password } =
+      parseToken(req);
+    req.body = { email, first_name, last_name, password };
+
+    if (!email || !hashedOtp) {
+      res.status(498);
+      throw new Error("OTP has expired");
+    }
 
     // compare otp
-    const isMatch = compareHash(otp, hashedOtp);
+    const isMatch = await compareHash(otp, hashedOtp);
+
+    // generate token
     if (isMatch) {
-      return res.status(200).send({ message: "OTP verified" });
-    } else {
-      return res.status(400).send({ message: "Invalid OTP" });
+      const token = generateJWT(
+        { email, first_name, last_name, password },
+        { expiresIn: "30d" }
+      );
+      req.body.token = token;
     }
+
+    // if otp is not matched
+    if (!isMatch) {
+      res.status(400);
+      throw new Error("Invalid OTP");
+    }
+    next();
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal server error" });
+    if (res.statusCode < 400) res.status(500);
+    res.send({
+      message: error.message || "Internal server error",
+      success: false,
+    });
   }
 };
 
