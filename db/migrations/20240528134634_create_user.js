@@ -7,6 +7,8 @@ exports.up = async function (knex) {
     table.increments("id").primary();
     table.string("first_name").notNullable();
     table.string("last_name").notNullable();
+    table.string("username").notNullable();
+    table.string("yt_channel").notNullable();
     table.string("email").notNullable();
     table.string("password").notNullable();
     table.timestamp("created_at").defaultTo(knex.fn.now());
