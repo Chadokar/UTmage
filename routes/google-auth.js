@@ -1,6 +1,5 @@
 const Router = require("express").Router();
 
-const passport = require("passport");
 const { redirectedUrl, decoder } = require("../controllers/auth.google");
 
 const router = Router;
