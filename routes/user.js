@@ -2,6 +2,7 @@ const express = require("express");
 const { body, header } = require("express-validator");
 const { validate } = require("../services/validator");
 const { login } = require("../controllers/auth");
+const { refreshToken } = require("../controllers/auth.google");
 
 const Router = express.Router();
 // auth
@@ -16,7 +17,8 @@ Router.post(
     ),
   ],
   validate,
-  login
+  login,
+  refreshToken
 );
 
 module.exports = Router;

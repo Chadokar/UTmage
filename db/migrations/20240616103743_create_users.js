@@ -8,9 +8,13 @@ exports.up = async function (knex) {
     table.string("first_name").notNullable();
     table.string("last_name").notNullable();
     table.string("username").notNullable();
-    table.string("yt_channel").notNullable();
     table.string("email").notNullable();
     table.string("password").notNullable();
+    table.string("profile_id");
+    table.integer("yt_channel");
+    table.string("role").defaultTo("user");
+    table.string("access_token", 20000);
+    table.string("refresh_token", 20000);
     table.timestamp("created_at").defaultTo(knex.fn.now());
     table.timestamp("updated_at").defaultTo(knex.fn.now());
     table.unique("email");

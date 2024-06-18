@@ -12,18 +12,28 @@ const db = require("../db");
 const otp_generate = async (req, res) => {
   try {
     // get email
-    const { email, first_name, last_name, password } = req.body;
-    const payload = { email, first_name, last_name, password };
+    const { email, first_name, last_name, password, username } = req.body;
+    const payload = { email, first_name, last_name, password, username };
 
-    // check if user exists
-    const user = await db("users").where({ email }).first();
+    // check if user exists of giver email or username
+    let user = await db("users").where({ email }).first();
+
     if (user) {
       res.status(400);
       throw new Error("Email already exists");
     }
 
+    user = await db("users").where({ username }).first();
+
+    if (user) {
+      res.status(400);
+      throw new Error("Username already exists");
+    }
+
     //generating OTP
     let otp = Math.floor(100000 + Math.random() * 900000);
+
+    console.log("opt : ", otp);
 
     // hashing OTP
     const salt = await bcrypt.genSalt(10);
@@ -67,9 +77,9 @@ const otp_verify = async (req, res, next) => {
     const otp = parseInt(req.body.otp);
 
     // parse token
-    const { email, hashedOtp, first_name, last_name, password } =
+    const { email, hashedOtp, first_name, last_name, password, username } =
       parseToken(req);
-    req.body = { email, first_name, last_name, password };
+    req.body = { email, first_name, last_name, password, username };
 
     if (!email || !hashedOtp) {
       res.status(498);
@@ -82,7 +92,7 @@ const otp_verify = async (req, res, next) => {
     // generate token
     if (isMatch) {
       const token = generateJWT(
-        { email, first_name, last_name, password },
+        { email, first_name, last_name, password, username },
         { expiresIn: "30d" }
       );
       req.body.token = token;

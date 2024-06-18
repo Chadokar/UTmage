@@ -8,7 +8,7 @@ const {
 
 const register = async (req, res) => {
   try {
-    const { first_name, last_name, email, password, token } = req.body;
+    const { first_name, last_name, email, password, username } = req.body;
 
     // hash password
     const salt = await bcrypt.genSalt(10);
@@ -20,8 +20,15 @@ const register = async (req, res) => {
         last_name,
         email,
         password: hashedPassword,
+        username,
       })
-      .returning(["id", "first_name", "last_name", "email", "uuid"]);
+      .returning(["id", "first_name", "last_name", "username", "email", "uuid"])
+      .then((data) => data[0]);
+
+    // console.log("user : ", user);
+
+    // generate token
+    const token = generateJWT({ id: user.id, email }, { expiresIn: "30d" });
 
     res.status(201).json({ user, token, success: true });
   } catch (error) {
@@ -31,12 +38,25 @@ const register = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     const user = await db("users")
-      .select("id", "first_name", "last_name", "email", "uuid", "password")
+      .select(
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "password",
+        "uuid",
+        "username",
+        "role",
+        "profile_id",
+        "yt_channel",
+        "access_token",
+        "refresh_token"
+      )
       .where({ email })
       .first();
 
@@ -50,20 +70,24 @@ const login = async (req, res) => {
     if (!isMatch) {
       throw new Error("Invalid email or password");
     }
+    console.log("user : ", user);
 
     // generate token
-    const token = generateJWT({ id: user.uuid, email }, { expiresIn: "30d" });
+    const token = generateJWT({ id: user.id, email }, { expiresIn: "30d" });
 
-    res.status(200).json({
-      user: {
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        password: user.password,
-      },
-      token,
-      success: true,
-    });
+    req.user = {
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      username: user.username,
+      access_token: user.access_token,
+      refresh_token: user.refresh_token,
+      profile_id: user.profile_id,
+      yt_channel: user.yt_channel,
+      role: user.role,
+    };
+    req.token = token;
+    next();
   } catch (error) {
     res
       .status(400)
