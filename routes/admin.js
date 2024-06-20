@@ -5,6 +5,7 @@ const {
   getAllUsers,
   deleteChannel,
   getAllChannels,
+  deleteVideo,
 } = require("../controllers/admin");
 
 const Router = express.Router();
@@ -41,6 +42,14 @@ Router.delete(
 
   //   [header("Authorization", "Authorization token is required").exists()],
   deleteChannel
+);
+
+// delete video
+Router.delete(
+  "/video/delete",
+
+  //   [header("Authorization", "Authorization token is required").exists()],
+  deleteVideo
 );
 
 module.exports = Router;

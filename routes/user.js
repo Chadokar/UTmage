@@ -2,7 +2,7 @@ const express = require("express");
 const { body, header } = require("express-validator");
 const { validate } = require("../services/validator");
 const { login } = require("../controllers/auth");
-const { refreshToken } = require("../controllers/auth.google");
+const refreshToken = require("../services/refresh-token");
 
 const Router = express.Router();
 // auth

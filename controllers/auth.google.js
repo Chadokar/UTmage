@@ -32,27 +32,6 @@ const redirectedUrl = async (req, res) => {
   }
 };
 
-// refreshToken function to refresh the access token
-const refreshToken = async (req, res) => {
-  try {
-    const { refresh_token } = req.user;
-    if (!refresh_token) {
-      res.status(400).send({ error: "Refresh token not provided" });
-      return;
-    }
-
-    // Use the OAuth2Client instance to get the token
-    const { tokens } = await client.refreshToken(refresh_token);
-    // console.log("token : ", tokens);
-
-    req.body.tokens = tokens;
-    res.status(200).send({ tokens, user: req.user, token: req.token });
-  } catch (error) {
-    if (error.code < 400) res.status(500);
-    res.send({ error: error.message });
-  }
-};
-
 // Oauth2 code decoder
 const decoder = async (req, res) => {
   try {
@@ -103,10 +82,16 @@ const decoder = async (req, res) => {
       throw new Error("No YouTube account found");
     }
 
-    const { id } = await db("users")
+    const getUser = await db("users")
       .select("id")
       .where({ email: user.payload.email })
       .first();
+
+    if (!getUser) {
+      res.status(400);
+      throw new Error("User not found. Please register first.");
+    }
+    const { id } = getUser;
 
     // // Save the user's YouTube account details to the database
 
@@ -231,4 +216,4 @@ const decoder = async (req, res) => {
 //   }
 // };
 
-module.exports = { redirectedUrl, decoder, refreshToken };
+module.exports = { redirectedUrl, decoder };

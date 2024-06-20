@@ -29,6 +29,7 @@ const getAllUsers = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.query;
+    if (!id) throw new Error("User id is required");
 
     // check if user exists
     const user = await db("users").where({ id }).first();
@@ -55,6 +56,7 @@ const deleteUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.query;
+    if (!id) throw new Error("User id is required");
     const { first_name, last_name, email, password } = req.body;
 
     // check if user exists
@@ -125,6 +127,7 @@ const getAllChannels = async (req, res) => {
 const deleteChannel = async (req, res) => {
   try {
     const { id } = req.query;
+    if (!id) throw new Error("Channel id is required");
 
     // check if channel exists
     const channel = await db("channels").where({ id }).first();
@@ -148,10 +151,39 @@ const deleteChannel = async (req, res) => {
   }
 };
 
+// delete video by id
+const deleteVideo = async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) throw new Error("Video id is required");
+
+    // check if video exists
+    const video = await db("videos").where({ id }).first();
+    if (!video) {
+      res.status(404);
+      throw new Error("This video does not exist");
+    }
+
+    // delete video
+    await db("videos").where({ id }).del();
+
+    res
+      .status(200)
+      .json({ message: "Video deleted successfully", success: true });
+  } catch (error) {
+    if (res.statusCode < 400) res.status(500);
+    res.send({
+      error: error.message || "Internal server error",
+      success: false,
+    });
+  }
+};
+
 module.exports = {
   deleteUser,
   getAllUsers,
   updateUser,
   deleteChannel,
   getAllChannels,
+  deleteVideo,
 };

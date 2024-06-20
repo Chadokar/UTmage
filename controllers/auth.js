@@ -75,17 +75,7 @@ const login = async (req, res, next) => {
     // generate token
     const token = generateJWT({ id: user.id, email }, { expiresIn: "30d" });
 
-    req.user = {
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      username: user.username,
-      access_token: user.access_token,
-      refresh_token: user.refresh_token,
-      profile_id: user.profile_id,
-      yt_channel: user.yt_channel,
-      role: user.role,
-    };
+    req.user = user;
     req.token = token;
     next();
   } catch (error) {

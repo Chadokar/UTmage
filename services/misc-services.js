@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Handlebars = require("handlebars");
+const { google } = require("googleapis");
 
 const handlebarsReplacements = ({ source, replacements }) => {
   return Handlebars.compile(source)(replacements);
@@ -11,8 +12,7 @@ const generateJWT = (payload, options) => {
 };
 
 const parseToken = (req) => {
-  const token = req.headers.authorization.split(" ")[1];
-  return verifyJWT(token);
+  return req.headers.authorization.split(" ")[1];
 };
 
 const verifyJWT = (token) => {
@@ -28,6 +28,12 @@ const compareHash = async (text, hash) => {
   return await bcrypt.compare(String(text), hash);
 };
 
+const client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URL
+);
+
 module.exports = {
   handlebarsReplacements,
   generateHash,
@@ -35,4 +41,5 @@ module.exports = {
   verifyJWT,
   parseToken,
   compareHash,
+  client,
 };
